@@ -1,0 +1,1217 @@
+<!DOCTYPE html>
+<html lang="en" class="dark scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EmotiSense AI | Real-Time Affective Intelligence &amp; Empathy Studio</title>
+  <meta name="description" content="EmotiSense AI: Real-Time Affective Intelligence & Empathy Studio built with Google Teachable Machine and TensorFlow.js." />
+
+  <!-- Google Fonts: Space Grotesk & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- TensorFlow.js & Official Teachable Machine Image Library -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            display: ['Space Grotesk', 'Inter', 'sans-serif'],
+          },
+          animation: {
+            'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'scan-line': 'scanLine 2.8s ease-in-out infinite',
+            'float': 'float 4s ease-in-out infinite',
+          },
+          keyframes: {
+            scanLine: {
+              '0%, 100%': { top: '8%', opacity: '0.25' },
+              '50%': { top: '90%', opacity: '0.9' },
+            },
+            float: {
+              '0%, 100%': { transform: 'translateY(0px)' },
+              '50%': { transform: 'translateY(-6px)' },
+            }
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    /* Custom Glassmorphism & AI Backdrop Utilities */
+    body {
+      background-color: #090d16;
+      color: #f1f5f9;
+      background-image:
+        radial-gradient(circle at 15% 15%, rgba(56, 189, 248, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 85% 20%, rgba(168, 85, 247, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 50% 85%, rgba(16, 185, 129, 0.06) 0%, transparent 45%),
+        linear-gradient(to right, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 100% 100%, 40px 40px, 40px 40px;
+    }
+
+    .glass-card {
+      background: rgba(15, 23, 42, 0.68);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(148, 163, 184, 0.14);
+      box-shadow: 0 20px 45px -15px rgba(0, 0, 0, 0.6);
+    }
+
+    .glass-subcard {
+      background: rgba(30, 41, 59, 0.45);
+      border: 1px solid rgba(148, 163, 184, 0.12);
+    }
+
+    /* Smooth confidence bar transitions */
+    .confidence-fill {
+      transition: width 220ms cubic-bezier(0.22, 1, 0.36, 1), background-color 300ms ease;
+    }
+
+    /* Webcam canvas mirror helper */
+    .mirror-video {
+      transform: scaleX(-1);
+    }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #090d16;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1e293b;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #334155;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-sky-500/30 selection:text-sky-200">
+
+  <!-- Top Navigation Header -->
+  <header class="sticky top-0 z-40 border-b border-slate-800/80 bg-[#090d16]/85 backdrop-blur-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <!-- Brand Identity -->
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-500 via-indigo-500 to-purple-600 p-[1px] shadow-lg shadow-indigo-500/20">
+          <div class="w-full h-full bg-[#0b1120] rounded-[11px] flex items-center justify-center">
+            <!-- Custom Neural Scan Icon -->
+            <svg class="w-5 h-5 text-sky-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 3H5a2 2 0 00-2 2v4m6-6h6m0 0h4a2 2 0 012 2v4M3 15v4a2 2 0 002 2h4m12-6v4a2 2 0 01-2 2h-4" />
+              <circle cx="9" cy="10" r="1" fill="currentColor" />
+              <circle cx="15" cy="10" r="1" fill="currentColor" />
+              <path stroke-linecap="round" d="M9.5 14.5c1.2 1.3 3.8 1.3 5 0" />
+            </svg>
+          </div>
+        </div>
+        <div>
+          <span class="font-display font-bold text-lg tracking-tight text-white">EmotiSense <span class="text-sky-400">AI</span></span>
+          <p class="text-[11px] text-slate-400 hidden sm:block">Real-Time Affective Intelligence &amp; Empathy Studio</p>
+        </div>
+      </div>
+
+      <!-- Navigation & Live Model Status Pill -->
+      <div class="flex items-center gap-3 sm:gap-5">
+        <nav class="hidden md:flex items-center gap-6 text-sm font-medium text-slate-300">
+          <a href="#scanner-section" class="hover:text-sky-400 transition-colors">AI Scanner</a>
+          <a href="#community-section" class="hover:text-sky-400 transition-colors">Community Impact</a>
+          <a href="#privacy-section" class="hover:text-sky-400 transition-colors">Privacy & Ethics</a>
+        </nav>
+
+        <!-- Dynamic Model Status Pill -->
+        <div id="model-status-pill" class="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium bg-amber-500/10 border border-amber-500/30 text-amber-300 transition-all">
+          <span id="model-status-dot" class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+          <span id="model-status-text">Loading Neural Model...</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex-1">
+    <!-- Hero Intro -->
+    <section class="pt-8 pb-6 sm:pt-12 sm:pb-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-center">
+      <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-300 text-xs font-semibold mb-4">
+        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+        </svg>
+        <span>Real-Time Affective Intelligence &amp; Empathy Studio</span>
+      </div>
+      <h1 class="font-display text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-white max-w-3xl mx-auto leading-tight">
+        EmotiSense <span class="bg-gradient-to-r from-sky-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent">AI Emotion Scanner</span>
+      </h1>
+      <p class="mt-3 sm:mt-4 text-sm sm:text-base text-slate-400 max-w-2xl mx-auto leading-relaxed">
+        Analyze facial expressions in real time using your webcam or uploaded portraits. Powered by your Google Teachable Machine model to recognize <span class="text-amber-300 font-medium">Happy</span>, <span class="text-sky-300 font-medium">Sad</span>, <span class="text-rose-300 font-medium">Angry</span>, and <span class="text-violet-300 font-medium">Surprised</span> expressions with 100% private in-browser inference.
+      </p>
+    </section>
+
+    <!-- Interactive Scanner Workspace -->
+    <section id="scanner-section" class="px-4 sm:px-6 lg:px-8 pb-16 max-w-7xl mx-auto">
+      <!-- Non-intrusive Alert/Error Banner -->
+      <div id="alert-banner" class="hidden mb-6 rounded-2xl border border-rose-500/30 bg-rose-500/10 px-4 py-3.5 text-sm text-rose-200 flex items-start justify-between gap-3">
+        <div class="flex items-start gap-3">
+          <svg class="w-5 h-5 text-rose-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <div>
+            <p id="alert-title" class="font-semibold text-rose-100">Notice</p>
+            <p id="alert-message" class="text-xs sm:text-sm text-rose-200/90 mt-0.5"></p>
+          </div>
+        </div>
+        <button onclick="hideAlert()" class="text-rose-300 hover:text-white p-1 rounded-lg transition-colors" aria-label="Close alert">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+        <!-- Left Column (7 cols): Input Viewport (Live Webcam / Image Upload) -->
+        <div class="lg:col-span-7 glass-card rounded-3xl p-4 sm:p-6">
+          <!-- Mode Switcher Tabs -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-800">
+            <div class="inline-flex p-1 rounded-2xl bg-slate-900/90 border border-slate-800 w-full sm:w-auto" role="tablist">
+              <button
+                id="tab-webcam"
+                type="button"
+                onclick="switchMode('webcam')"
+                class="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all bg-sky-500 text-slate-950 shadow-lg shadow-sky-500/25"
+              >
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+                <span>Live Webcam</span>
+              </button>
+              <button
+                id="tab-upload"
+                type="button"
+                onclick="switchMode('upload')"
+                class="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all text-slate-400 hover:text-white"
+              >
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span>Upload Image</span>
+              </button>
+            </div>
+
+            <!-- Live FPS / Inference Badge -->
+            <div class="flex items-center justify-between sm:justify-end gap-2 text-xs text-slate-400">
+              <span class="px-2.5 py-1 rounded-lg bg-slate-900/80 border border-slate-800 font-mono" id="inference-badge">
+                Ready for input
+              </span>
+            </div>
+          </div>
+
+          <!-- VIEW 1: LIVE WEBCAM PANEL -->
+          <div id="panel-webcam" class="mt-5">
+            <!-- Viewport Container -->
+            <div class="relative w-full aspect-[4/3] sm:aspect-[16/11] rounded-2xl overflow-hidden bg-slate-950 border border-slate-800/90 flex items-center justify-center group">
+              <!-- Live Webcam Canvas / Video Container -->
+              <div id="webcam-container" class="w-full h-full flex items-center justify-center [&>canvas]:w-full [&>canvas]:h-full [&>canvas]:object-cover [&>video]:w-full [&>video]:h-full [&>video]:object-cover"></div>
+
+              <!-- Idle Placeholder Overlay (when webcam is off) -->
+              <div id="webcam-placeholder" class="absolute inset-0 flex flex-col items-center justify-center p-6 text-center bg-gradient-to-b from-slate-900/90 to-slate-950/95">
+                <div class="w-16 h-16 rounded-2xl bg-sky-500/10 border border-sky-500/25 flex items-center justify-center mb-4 animate-float">
+                  <svg class="w-8 h-8 text-sky-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <h3 class="font-display font-bold text-lg text-white">Camera Feed Standby</h3>
+                <p class="text-xs sm:text-sm text-slate-400 max-w-sm mt-1.5">
+                  Click <span class="text-sky-400 font-semibold">Start Live Scanner</span> below to activate your webcam and detect emotions in real time.
+                </p>
+              </div>
+
+              <!-- Active AI HUD Scanning Reticle Overlay -->
+              <div id="webcam-hud" class="hidden pointer-events-none absolute inset-0">
+                <!-- Animated Laser Scan Line -->
+                <div class="absolute left-6 right-6 h-[2px] bg-gradient-to-r from-transparent via-sky-400 to-transparent shadow-[0_0_12px_rgba(56,189,248,0.9)] animate-scan-line"></div>
+
+                <!-- Corner Framing Brackets -->
+                <div class="absolute top-4 left-4 w-8 h-8 border-t-2 border-l-2 border-sky-400/80 rounded-tl-lg"></div>
+                <div class="absolute top-4 right-4 w-8 h-8 border-t-2 border-r-2 border-sky-400/80 rounded-tr-lg"></div>
+                <div class="absolute bottom-4 left-4 w-8 h-8 border-b-2 border-l-2 border-sky-400/80 rounded-bl-lg"></div>
+                <div class="absolute bottom-4 right-4 w-8 h-8 border-b-2 border-r-2 border-sky-400/80 rounded-br-lg"></div>
+
+                <!-- Top-Left Live Indicator -->
+                <div class="absolute top-4 left-14 flex items-center gap-2 px-2.5 py-1 rounded-md bg-slate-950/75 backdrop-blur-md border border-slate-700/60 text-[11px] font-semibold text-emerald-300">
+                  <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                  <span>LIVE SCANNING</span>
+                </div>
+
+                <!-- Bottom-Center Floating Quick Emotion Pill -->
+                <div id="hud-emotion-pill" class="absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full bg-slate-950/80 backdrop-blur-md border border-slate-700/70 text-xs font-semibold text-white shadow-lg flex items-center gap-2 whitespace-nowrap">
+                  <span id="hud-emotion-emoji">✨</span>
+                  <span id="hud-emotion-label">Analyzing face...</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Webcam Action Controls -->
+            <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
+              <div class="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+                <button
+                  id="btn-start-webcam"
+                  type="button"
+                  onclick="startWebcam()"
+                  disabled
+                  class="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-semibold text-sm bg-gradient-to-r from-sky-500 to-indigo-500 hover:from-sky-400 hover:to-indigo-400 text-white shadow-lg shadow-sky-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.99]"
+                >
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span id="btn-start-text">Loading Model...</span>
+                </button>
+
+                <button
+                  id="btn-stop-webcam"
+                  type="button"
+                  onclick="stopWebcam()"
+                  class="hidden flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-semibold text-sm bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30 transition-all active:scale-[0.99]"
+                >
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
+                  </svg>
+                  <span>Stop Camera</span>
+                </button>
+              </div>
+
+              <!-- Mirror Camera Toggle -->
+              <button
+                id="btn-mirror-toggle"
+                type="button"
+                onclick="toggleMirror()"
+                class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs sm:text-sm font-medium bg-slate-800/80 hover:bg-slate-800 text-slate-300 border border-slate-700/70 transition-all"
+                title="Flip camera horizontally"
+              >
+                <svg class="w-4 h-4 text-sky-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                </svg>
+                <span>Mirror: <strong id="mirror-state-label" class="text-white">ON</strong></span>
+              </button>
+            </div>
+          </div>
+
+          <!-- VIEW 2: IMAGE UPLOAD PANEL -->
+          <div id="panel-upload" class="hidden mt-5">
+            <!-- Drag and Drop Zone -->
+            <div
+              id="drop-zone"
+              class="relative w-full aspect-[4/3] sm:aspect-[16/11] rounded-2xl border-2 border-dashed border-slate-700 hover:border-sky-400/70 bg-slate-950/80 transition-all flex flex-col items-center justify-center overflow-hidden cursor-pointer group"
+              onclick="document.getElementById('image-file-input').click()"
+            >
+              <input
+                type="file"
+                id="image-file-input"
+                accept="image/*"
+                class="hidden"
+                onchange="handleImageFileSelect(event)"
+              />
+
+              <!-- Empty Drop Prompt -->
+              <div id="upload-prompt" class="flex flex-col items-center justify-center p-6 text-center">
+                <div class="w-16 h-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/25 flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
+                  <svg class="w-8 h-8 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                  </svg>
+                </div>
+                <h3 class="font-display font-bold text-lg text-white">Drop an image here or click to browse</h3>
+                <p class="text-xs sm:text-sm text-slate-400 max-w-sm mt-1.5">
+                  Supports JPG, PNG, and WebP portraits. Your image is analyzed instantly in your browser—never uploaded to any server.
+                </p>
+                <span class="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-800 text-xs font-semibold text-sky-300 border border-slate-700 group-hover:bg-slate-700 transition-colors">
+                  Select Photo from Device
+                </span>
+              </div>
+
+              <!-- Uploaded Image Preview -->
+              <img
+                id="uploaded-image-preview"
+                alt="Uploaded face for emotion analysis"
+                class="hidden w-full h-full object-contain bg-slate-950"
+              />
+            </div>
+
+            <!-- Upload Action Controls -->
+            <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
+              <button
+                type="button"
+                onclick="document.getElementById('image-file-input').click()"
+                class="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-semibold text-sm bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-400 hover:to-purple-400 text-white shadow-lg shadow-indigo-500/20 transition-all"
+              >
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                </svg>
+                <span>Choose New Photo</span>
+              </button>
+
+              <div class="flex items-center gap-2 w-full sm:w-auto">
+                <button
+                  id="btn-reanalyze-image"
+                  type="button"
+                  onclick="analyzeUploadedImage()"
+                  disabled
+                  class="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs sm:text-sm font-semibold bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                >
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  <span>Analyze Photo</span>
+                </button>
+                <button
+                  id="btn-clear-image"
+                  type="button"
+                  onclick="clearUploadedImage()"
+                  disabled
+                  class="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs sm:text-sm font-semibold bg-slate-800/70 hover:bg-rose-500/20 text-slate-300 hover:text-rose-300 border border-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                >
+                  <span>Clear</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column (5 cols): Real-Time Emotion Predictions & Feedback -->
+        <div class="lg:col-span-5 flex flex-col gap-6">
+          <!-- Hero Primary Detected Emotion Card -->
+          <div id="primary-emotion-card" class="glass-card rounded-3xl p-6 transition-all duration-300 border-slate-700/60 relative overflow-hidden">
+            <!-- Ambient Glow Accent -->
+            <div id="primary-glow" class="pointer-events-none absolute -top-20 -right-20 w-48 h-48 rounded-full bg-sky-500/15 blur-3xl transition-colors duration-500"></div>
+
+            <div class="flex items-center justify-between gap-2 mb-4">
+              <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Primary Detected Emotion</span>
+              <span id="primary-confidence-badge" class="px-3 py-1 rounded-full text-xs font-bold bg-slate-800 text-slate-300 border border-slate-700">
+                Waiting for scan
+              </span>
+            </div>
+
+            <div class="flex items-center gap-4 sm:gap-5">
+              <!-- Dynamic Emotion Illustration Container -->
+              <div id="primary-icon-box" class="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-slate-900/90 border border-slate-700/80 flex items-center justify-center shrink-0 shadow-inner transition-all duration-300">
+                <span id="primary-emoji" class="text-4xl sm:text-5xl select-none">🧠</span>
+              </div>
+
+              <div class="min-w-0 flex-1">
+                <h2 id="primary-emotion-title" class="font-display text-2xl sm:text-3xl font-extrabold text-white tracking-tight truncate">
+                  Ready to Scan
+                </h2>
+                <p id="primary-emotion-subtitle" class="text-xs sm:text-sm text-slate-400 mt-1 leading-relaxed">
+                  Start the live webcam or upload a photo to view real-time AI emotion recognition results.
+                </p>
+              </div>
+            </div>
+
+            <!-- Empathetic Insight / Communication Tip Box -->
+            <div id="empathy-tip-box" class="mt-5 p-3.5 rounded-2xl bg-slate-900/75 border border-slate-800/90 flex items-start gap-3">
+              <div class="w-7 h-7 rounded-lg bg-sky-500/15 text-sky-400 flex items-center justify-center shrink-0 mt-0.5">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                </svg>
+              </div>
+              <div>
+                <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Emotional Awareness Insight</p>
+                <p id="empathy-tip-text" class="text-xs sm:text-sm text-slate-200 mt-0.5 leading-relaxed">
+                  Recognizing subtle facial cues helps build empathy, active listening, and supportive conversations.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Confidence Breakdown Card (All 4 Emotions) -->
+          <div class="glass-card rounded-3xl p-6">
+            <div class="flex items-center justify-between mb-5">
+              <div>
+                <h3 class="font-display font-bold text-base sm:text-lg text-white">Confidence Breakdown</h3>
+                <p class="text-xs text-slate-400">Live probability distribution across all 4 emotion classes</p>
+              </div>
+              <span class="text-[11px] font-mono text-slate-400 bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-800">
+                4 Classes
+              </span>
+            </div>
+
+            <!-- Emotion Bars List -->
+            <div id="emotion-bars-container" class="space-y-4">
+              <!-- Happy -->
+              <div id="row-happy" class="p-3 rounded-2xl glass-subcard transition-all duration-300">
+                <div class="flex items-center justify-between text-sm mb-2">
+                  <div class="flex items-center gap-2.5">
+                    <span class="text-xl" aria-hidden="true">😊</span>
+                    <span class="font-semibold text-white">Happy</span>
+                  </div>
+                  <span id="pct-happy" class="font-mono font-bold text-amber-300">0.0%</span>
+                </div>
+                <div class="w-full h-2.5 rounded-full bg-slate-950/90 overflow-hidden p-[1px]">
+                  <div id="bar-happy" class="confidence-fill h-full rounded-full bg-gradient-to-r from-amber-500 to-yellow-400" style="width: 0%"></div>
+                </div>
+              </div>
+
+              <!-- Sad -->
+              <div id="row-sad" class="p-3 rounded-2xl glass-subcard transition-all duration-300">
+                <div class="flex items-center justify-between text-sm mb-2">
+                  <div class="flex items-center gap-2.5">
+                    <span class="text-xl" aria-hidden="true">😢</span>
+                    <span class="font-semibold text-white">Sad</span>
+                  </div>
+                  <span id="pct-sad" class="font-mono font-bold text-sky-300">0.0%</span>
+                </div>
+                <div class="w-full h-2.5 rounded-full bg-slate-950/90 overflow-hidden p-[1px]">
+                  <div id="bar-sad" class="confidence-fill h-full rounded-full bg-gradient-to-r from-blue-600 to-sky-400" style="width: 0%"></div>
+                </div>
+              </div>
+
+              <!-- Angry -->
+              <div id="row-angry" class="p-3 rounded-2xl glass-subcard transition-all duration-300">
+                <div class="flex items-center justify-between text-sm mb-2">
+                  <div class="flex items-center gap-2.5">
+                    <span class="text-xl" aria-hidden="true">😠</span>
+                    <span class="font-semibold text-white">Angry</span>
+                  </div>
+                  <span id="pct-angry" class="font-mono font-bold text-rose-300">0.0%</span>
+                </div>
+                <div class="w-full h-2.5 rounded-full bg-slate-950/90 overflow-hidden p-[1px]">
+                  <div id="bar-angry" class="confidence-fill h-full rounded-full bg-gradient-to-r from-rose-600 to-red-400" style="width: 0%"></div>
+                </div>
+              </div>
+
+              <!-- Surprised -->
+              <div id="row-surprised" class="p-3 rounded-2xl glass-subcard transition-all duration-300">
+                <div class="flex items-center justify-between text-sm mb-2">
+                  <div class="flex items-center gap-2.5">
+                    <span class="text-xl" aria-hidden="true">😲</span>
+                    <span class="font-semibold text-white">Surprised</span>
+                  </div>
+                  <span id="pct-surprised" class="font-mono font-bold text-violet-300">0.0%</span>
+                </div>
+                <div class="w-full h-2.5 rounded-full bg-slate-950/90 overflow-hidden p-[1px]">
+                  <div id="bar-surprised" class="confidence-fill h-full rounded-full bg-gradient-to-r from-violet-600 to-fuchsia-400" style="width: 0%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- About the Project & Community Significance Section -->
+    <section id="community-section" class="border-t border-slate-800/80 bg-slate-950/50 py-16 sm:py-20 px-4 sm:px-6 lg:px-8">
+      <div class="max-w-7xl mx-auto">
+        <div class="max-w-3xl mx-auto text-center mb-12 sm:mb-16">
+          <span class="inline-block px-3.5 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/25 text-indigo-300 text-xs font-semibold uppercase tracking-wider mb-3">
+            About the Project & Community Significance
+          </span>
+          <h2 class="font-display text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
+            Bridging Artificial Intelligence with Human Empathy
+          </h2>
+          <p class="mt-4 text-sm sm:text-base text-slate-400 leading-relaxed">
+            Technology is most meaningful when it strengthens human connection. EmotiSense AI demonstrates how accessible machine learning tools like Google Teachable Machine can support emotional literacy, inclusive classrooms, and compassionate communities.
+          </p>
+        </div>
+
+        <!-- 3 Pillars of Community Impact -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+          <!-- Card 1: Emotional Awareness -->
+          <div class="glass-card rounded-3xl p-6 sm:p-8 flex flex-col justify-between hover:border-amber-500/30 transition-all">
+            <div>
+              <div class="w-12 h-12 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-300 flex items-center justify-center mb-5">
+                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+              </div>
+              <h3 class="font-display text-xl font-bold text-white mb-3">Emotional Self-Awareness</h3>
+              <p class="text-sm text-slate-400 leading-relaxed">
+                Many students and young learners struggle to identify and name what they are feeling in real time. Interactive visual feedback helps individuals recognize how emotions manifest physically, encouraging mindfulness and healthy self-regulation before stress escalates.
+              </p>
+            </div>
+            <div class="mt-6 pt-4 border-t border-slate-800/80 text-xs font-medium text-amber-300/90">
+              Supports Social-Emotional Learning (SEL)
+            </div>
+          </div>
+
+          <!-- Card 2: Empathy & Inclusive Education -->
+          <div class="glass-card rounded-3xl p-6 sm:p-8 flex flex-col justify-between hover:border-sky-500/30 transition-all">
+            <div>
+              <div class="w-12 h-12 rounded-2xl bg-sky-500/15 border border-sky-500/30 text-sky-300 flex items-center justify-center mb-5">
+                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              </div>
+              <h3 class="font-display text-xl font-bold text-white mb-3">Empathy in Schools & Classrooms</h3>
+              <p class="text-sm text-slate-400 leading-relaxed">
+                In diverse classrooms, understanding nonverbal cues fosters kindness and peer support. Emotion recognition tools can serve as interactive educational aids—especially for neurodiverse learners practicing facial cue interpretation in a safe, judgment-free environment.
+              </p>
+            </div>
+            <div class="mt-6 pt-4 border-t border-slate-800/80 text-xs font-medium text-sky-300/90">
+              Fosters Inclusive & Supportive Learning
+            </div>
+          </div>
+
+          <!-- Card 3: Constructive Communication -->
+          <div class="glass-card rounded-3xl p-6 sm:p-8 flex flex-col justify-between hover:border-purple-500/30 transition-all">
+            <div>
+              <div class="w-12 h-12 rounded-2xl bg-purple-500/15 border border-purple-500/30 text-purple-300 flex items-center justify-center mb-5">
+                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+              </div>
+              <h3 class="font-display text-xl font-bold text-white mb-3">Stronger Community Communication</h3>
+              <p class="text-sm text-slate-400 leading-relaxed">
+                Over 70% of human communication is nonverbal. By highlighting expressions of joy, sadness, frustration, or surprise, communities and youth workshops can spark meaningful discussions around active listening, conflict resolution, and mental well-being.
+              </p>
+            </div>
+            <div class="mt-6 pt-4 border-t border-slate-800/80 text-xs font-medium text-purple-300/90">
+              Encourages Active Listening & Dialogue
+            </div>
+          </div>
+        </div>
+
+        <!-- Privacy & Responsible AI Banner -->
+        <div id="privacy-section" class="mt-10 glass-card rounded-3xl p-6 sm:p-8 border-emerald-500/20 bg-gradient-to-r from-emerald-950/20 via-slate-900/70 to-sky-950/20">
+          <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+            <div class="flex items-start gap-4">
+              <div class="w-12 h-12 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center justify-center shrink-0">
+                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+              </div>
+              <div>
+                <h4 class="font-display font-bold text-lg text-white">Privacy-First & Responsible AI Architecture</h4>
+                <p class="text-xs sm:text-sm text-slate-300 mt-1 max-w-3xl leading-relaxed">
+                  Your privacy is strictly protected. All webcam video frames and uploaded images are processed <strong>100% locally inside your browser</strong> using TensorFlow.js. No biometric data, photos, or video streams are ever recorded, stored, or transmitted to external servers.
+                </p>
+              </div>
+            </div>
+            <div class="shrink-0">
+              <a
+                href="https://teachablemachine.withgoogle.com/models/lAoV0RXGI/"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-colors"
+              >
+                <span>Model Source</span>
+                <svg class="w-3.5 h-3.5 text-sky-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="border-t border-slate-800/80 py-8 px-4 sm:px-6 lg:px-8 text-center text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+      <p>
+        <span class="text-slate-300 font-semibold">EmotiSense AI</span> &mdash; Real-Time Affective Intelligence &amp; Empathy Studio
+      </p>
+      <p class="font-mono text-[11px] text-slate-500">
+        Model Endpoint: teachablemachine.withgoogle.com/models/lAoV0RXGI/
+      </p>
+    </div>
+  </footer>
+
+  <!-- Application JavaScript Logic -->
+  <script>
+    /**
+     * Teachable Machine Model Configuration
+     * Uses the user's actual trained Teachable Machine image model URL.
+     */
+    const MODEL_BASE_URL = "https://teachablemachine.withgoogle.com/models/lAoV0RXGI/";
+
+    let model = null;
+    let webcam = null;
+    let fallbackVideo = null;
+    let fallbackStream = null;
+    let isWebcamRunning = false;
+    let animationFrameId = null;
+    let currentMode = "webcam"; // 'webcam' | 'upload'
+    let isMirrored = true;
+    let lastFrameTime = performance.now();
+
+    /**
+     * Metadata & visual theme configuration for each of the four target emotions.
+     */
+    const EMOTION_CONFIG = {
+      happy: {
+        key: "happy",
+        label: "Happy",
+        emoji: "😊",
+        subtitle: "Positive, joyful, and warm facial expression detected.",
+        tip: "Joy is contagious! Share a smile or positive feedback to uplift those around you.",
+        badgeClass: "bg-amber-500/20 text-amber-300 border-amber-500/40",
+        cardBorder: "border-amber-500/40",
+        glowColor: "bg-amber-500/25",
+        iconBoxClass: "bg-amber-500/15 border-amber-500/40 shadow-amber-500/10",
+        rowHighlight: "border-amber-500/50 bg-amber-500/10"
+      },
+      sad: {
+        key: "sad",
+        label: "Sad",
+        emoji: "😢",
+        subtitle: "Downcast, somber, or reflective expression detected.",
+        tip: "When someone looks sad, gentle empathy and an open, non-judgmental check-in can make a big difference.",
+        badgeClass: "bg-sky-500/20 text-sky-300 border-sky-500/40",
+        cardBorder: "border-sky-500/40",
+        glowColor: "bg-sky-500/25",
+        iconBoxClass: "bg-sky-500/15 border-sky-500/40 shadow-sky-500/10",
+        rowHighlight: "border-sky-500/50 bg-sky-500/10"
+      },
+      angry: {
+        key: "angry",
+        label: "Angry",
+        emoji: "😠",
+        subtitle: "Tense, frustrated, or upset facial expression detected.",
+        tip: "Pause, take a slow deep breath, and approach frustration with calm curiosity rather than reaction.",
+        badgeClass: "bg-rose-500/20 text-rose-300 border-rose-500/40",
+        cardBorder: "border-rose-500/40",
+        glowColor: "bg-rose-500/25",
+        iconBoxClass: "bg-rose-500/15 border-rose-500/40 shadow-rose-500/10",
+        rowHighlight: "border-rose-500/50 bg-rose-500/10"
+      },
+      surprised: {
+        key: "surprised",
+        label: "Surprised",
+        emoji: "😲",
+        subtitle: "Astonished, wide-eyed, or unexpected reaction detected.",
+        tip: "Surprise signals heightened attention and curiosity—an ideal moment to ask questions and learn more.",
+        badgeClass: "bg-violet-500/20 text-violet-300 border-violet-500/40",
+        cardBorder: "border-violet-500/40",
+        glowColor: "bg-violet-500/25",
+        iconBoxClass: "bg-violet-500/15 border-violet-500/40 shadow-violet-500/10",
+        rowHighlight: "border-violet-500/50 bg-violet-500/10"
+      }
+    };
+
+    /**
+     * Initialize and load the Teachable Machine model on page load.
+     */
+    async function initModel() {
+      const statusPill = document.getElementById("model-status-pill");
+      const statusDot = document.getElementById("model-status-dot");
+      const statusText = document.getElementById("model-status-text");
+      const startBtn = document.getElementById("btn-start-webcam");
+      const startBtnText = document.getElementById("btn-start-text");
+
+      try {
+        const modelURL = MODEL_BASE_URL + "model.json";
+        const metadataURL = MODEL_BASE_URL + "metadata.json";
+
+        model = await tmImage.load(modelURL, metadataURL);
+
+        // Update UI to reflect ready state
+        statusPill.className =
+          "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 transition-all";
+        statusDot.className = "w-2 h-2 rounded-full bg-emerald-400";
+        statusText.textContent = "Model Ready";
+
+        startBtn.disabled = false;
+        startBtnText.textContent = "Start Live Scanner";
+        document.getElementById("inference-badge").textContent = "Model loaded • Ready";
+      } catch (error) {
+        console.error("Failed to load Teachable Machine model:", error);
+        statusPill.className =
+          "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium bg-rose-500/10 border border-rose-500/30 text-rose-300 transition-all";
+        statusDot.className = "w-2 h-2 rounded-full bg-rose-400";
+        statusText.textContent = "Model Load Error";
+        startBtnText.textContent = "Model Unavailable";
+
+        showAlert(
+          "Unable to Load Teachable Machine Model",
+          "Please check your internet connection and verify that https://teachablemachine.withgoogle.com/models/lAoV0RXGI/ is accessible."
+        );
+      }
+    }
+
+    /**
+     * Switch between Live Webcam mode and Image Upload mode.
+     */
+    function switchMode(mode) {
+      if (currentMode === mode) return;
+      currentMode = mode;
+      hideAlert();
+
+      const tabWebcam = document.getElementById("tab-webcam");
+      const tabUpload = document.getElementById("tab-upload");
+      const panelWebcam = document.getElementById("panel-webcam");
+      const panelUpload = document.getElementById("panel-upload");
+
+      if (mode === "webcam") {
+        tabWebcam.className =
+          "flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all bg-sky-500 text-slate-950 shadow-lg shadow-sky-500/25";
+        tabUpload.className =
+          "flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all text-slate-400 hover:text-white";
+        panelWebcam.classList.remove("hidden");
+        panelUpload.classList.add("hidden");
+      } else {
+        // Stop live webcam when switching to image upload mode
+        if (isWebcamRunning) {
+          stopWebcam();
+        }
+        tabUpload.className =
+          "flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all bg-indigo-500 text-white shadow-lg shadow-indigo-500/25";
+        tabWebcam.className =
+          "flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all text-slate-400 hover:text-white";
+        panelUpload.classList.remove("hidden");
+        panelWebcam.classList.add("hidden");
+
+        // Re-analyze if an image is already loaded
+        const previewImg = document.getElementById("uploaded-image-preview");
+        if (!previewImg.classList.contains("hidden") && previewImg.src) {
+          analyzeUploadedImage();
+        }
+      }
+    }
+
+    /**
+     * Start the live webcam stream and real-time prediction loop.
+     * Uses tmImage.Webcam with a resilient getUserMedia video fallback for mobile/desktop compatibility.
+     */
+    async function startWebcam() {
+      if (!model) {
+        showAlert("Model Still Loading", "Please wait a moment for the neural model to finish loading.");
+        return;
+      }
+
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        showAlert(
+          "Camera API Unsupported",
+          "Your browser or insecure context (HTTP) does not support webcam access. Try HTTPS or switch to 'Upload Image'."
+        );
+        return;
+      }
+
+      hideAlert();
+      const startBtn = document.getElementById("btn-start-webcam");
+      const startBtnText = document.getElementById("btn-start-text");
+      startBtn.disabled = true;
+      startBtnText.textContent = "Requesting Camera...";
+
+      const container = document.getElementById("webcam-container");
+      container.innerHTML = "";
+
+      try {
+        // Primary: Official Teachable Machine Webcam helper
+        webcam = new tmImage.Webcam(480, 360, false);
+        await webcam.setup({ facingMode: "user" });
+        await webcam.play();
+
+        webcam.canvas.classList.toggle("mirror-video", isMirrored);
+        container.appendChild(webcam.canvas);
+      } catch (tmErr) {
+        console.warn("tmImage.Webcam failed, attempting direct getUserMedia fallback:", tmErr);
+        webcam = null;
+
+        try {
+          // Fallback: Standard HTML5 Video element with getUserMedia
+          fallbackStream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } },
+            audio: false
+          });
+
+          fallbackVideo = document.createElement("video");
+          fallbackVideo.setAttribute("playsinline", "true");
+          fallbackVideo.setAttribute("autoplay", "true");
+          fallbackVideo.muted = true;
+          fallbackVideo.srcObject = fallbackStream;
+          await fallbackVideo.play();
+
+          fallbackVideo.classList.toggle("mirror-video", isMirrored);
+          container.appendChild(fallbackVideo);
+        } catch (fallbackErr) {
+          console.error("Webcam access error:", fallbackErr);
+          startBtn.disabled = false;
+          startBtnText.textContent = "Start Live Scanner";
+
+          showAlert(
+            "Camera Access Denied or Unavailable",
+            "Please allow webcam permissions in your browser settings, or switch to the 'Upload Image' tab to test with a photo."
+          );
+          return;
+        }
+      }
+
+      isWebcamRunning = true;
+
+      // Update UI states
+      document.getElementById("webcam-placeholder").classList.add("hidden");
+      document.getElementById("webcam-hud").classList.remove("hidden");
+      startBtn.classList.add("hidden");
+      document.getElementById("btn-stop-webcam").classList.remove("hidden");
+
+      updateStatusBadge("Scanning Live...", true);
+
+      lastFrameTime = performance.now();
+      animationFrameId = window.requestAnimationFrame(webcamLoop);
+    }
+
+    /**
+     * Real-time webcam prediction loop powered by requestAnimationFrame.
+     */
+    async function webcamLoop() {
+      if (!isWebcamRunning) return;
+
+      if (webcam) {
+        webcam.update();
+        await predictFromElement(webcam.canvas);
+      } else if (fallbackVideo && fallbackVideo.readyState >= 2) {
+        await predictFromElement(fallbackVideo);
+      }
+
+      // Calculate live inference FPS
+      const now = performance.now();
+      const fps = Math.max(1, Math.round(1000 / Math.max(1, now - lastFrameTime)));
+      lastFrameTime = now;
+      document.getElementById("inference-badge").textContent = `Live • ${fps} FPS`;
+
+      if (isWebcamRunning) {
+        animationFrameId = window.requestAnimationFrame(webcamLoop);
+      }
+    }
+
+    /**
+     * Stop the webcam stream and release camera hardware resources cleanly.
+     */
+    async function stopWebcam() {
+      isWebcamRunning = false;
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+        animationFrameId = null;
+      }
+
+      if (webcam) {
+        try {
+          await webcam.stop();
+        } catch (e) {
+          console.warn("Error stopping tmImage webcam:", e);
+        }
+        webcam = null;
+      }
+
+      if (fallbackStream) {
+        fallbackStream.getTracks().forEach((track) => track.stop());
+        fallbackStream = null;
+      }
+      if (fallbackVideo) {
+        fallbackVideo.srcObject = null;
+        fallbackVideo = null;
+      }
+
+      document.getElementById("webcam-container").innerHTML = "";
+      document.getElementById("webcam-placeholder").classList.remove("hidden");
+      document.getElementById("webcam-hud").classList.add("hidden");
+
+      const startBtn = document.getElementById("btn-start-webcam");
+      startBtn.classList.remove("hidden");
+      startBtn.disabled = false;
+      document.getElementById("btn-start-text").textContent = "Start Live Scanner";
+      document.getElementById("btn-stop-webcam").classList.add("hidden");
+
+      updateStatusBadge("Model Ready", false);
+      document.getElementById("inference-badge").textContent = "Camera stopped";
+    }
+
+    /**
+     * Toggle horizontal mirror effect on the live webcam feed.
+     */
+    function toggleMirror() {
+      isMirrored = !isMirrored;
+      document.getElementById("mirror-state-label").textContent = isMirrored ? "ON" : "OFF";
+      if (webcam && webcam.canvas) {
+        webcam.canvas.classList.toggle("mirror-video", isMirrored);
+      }
+      if (fallbackVideo) {
+        fallbackVideo.classList.toggle("mirror-video", isMirrored);
+      }
+    }
+
+    /**
+     * Handle file picker image selection.
+     */
+    function handleImageFileSelect(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      loadImageFile(file);
+    }
+
+    /**
+     * Read and display an uploaded image file, then trigger prediction after decode().
+     */
+    function loadImageFile(file) {
+      if (!file.type.startsWith("image/")) {
+        showAlert("Invalid File Type", "Please select a valid image file (JPG, PNG, or WebP).");
+        return;
+      }
+
+      hideAlert();
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        const previewImg = document.getElementById("uploaded-image-preview");
+        previewImg.onload = async function () {
+          try {
+            if (typeof previewImg.decode === "function") {
+              await previewImg.decode();
+            }
+          } catch (decodeErr) {
+            console.warn("Image decode warning:", decodeErr);
+          }
+          document.getElementById("upload-prompt").classList.add("hidden");
+          previewImg.classList.remove("hidden");
+          document.getElementById("btn-reanalyze-image").disabled = false;
+          document.getElementById("btn-clear-image").disabled = false;
+          await analyzeUploadedImage();
+        };
+        previewImg.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    /**
+     * Run real Teachable Machine model prediction on the uploaded image.
+     */
+    async function analyzeUploadedImage() {
+      if (!model) {
+        showAlert("Model Not Ready", "Please wait for the Teachable Machine model to finish loading.");
+        return;
+      }
+      const previewImg = document.getElementById("uploaded-image-preview");
+      if (!previewImg || previewImg.classList.contains("hidden") || !previewImg.src) return;
+
+      if (!previewImg.complete || previewImg.naturalWidth === 0) {
+        await new Promise((resolve) => {
+          previewImg.onload = resolve;
+        });
+      }
+
+      const t0 = performance.now();
+      await predictFromElement(previewImg);
+      const elapsed = Math.max(1, Math.round(performance.now() - t0));
+      document.getElementById("inference-badge").textContent = `Analyzed in ${elapsed}ms`;
+    }
+
+    /**
+     * Clear uploaded image and reset UI.
+     */
+    function clearUploadedImage() {
+      const previewImg = document.getElementById("uploaded-image-preview");
+      previewImg.src = "";
+      previewImg.classList.add("hidden");
+      document.getElementById("upload-prompt").classList.remove("hidden");
+      document.getElementById("image-file-input").value = "";
+      document.getElementById("btn-reanalyze-image").disabled = true;
+      document.getElementById("btn-clear-image").disabled = true;
+      document.getElementById("inference-badge").textContent = "Ready for image";
+      resetPredictionDisplay();
+    }
+
+    /**
+     * Core Prediction Function:
+     * Executes model.predict() on a canvas or HTMLImageElement and maps
+     * probabilities cleanly to Happy, Sad, Angry, and Surprised.
+     */
+    async function predictFromElement(inputElement) {
+      if (!model) return;
+
+      try {
+        const predictions = await model.predict(inputElement);
+
+        // Map predictions to normalized keys: happy, sad, angry, surprised
+        const scores = {
+          happy: 0,
+          sad: 0,
+          angry: 0,
+          surprised: 0
+        };
+
+        predictions.forEach((pred) => {
+          const rawLabel = (pred.className || "").trim().toLowerCase();
+          if (rawLabel.includes("happy")) {
+            scores.happy = pred.probability;
+          } else if (rawLabel.includes("sad")) {
+            scores.sad = pred.probability;
+          } else if (rawLabel.includes("angry") || rawLabel.includes("anger")) {
+            scores.angry = pred.probability;
+          } else if (rawLabel.includes("surpris")) {
+            scores.surprised = pred.probability;
+          }
+        });
+
+        updatePredictionUI(scores);
+      } catch (err) {
+        console.error("Prediction error:", err);
+      }
+    }
+
+    /**
+     * Update confidence bars, primary emotion card, and HUD overlay with real probabilities.
+     */
+    function updatePredictionUI(scores) {
+      const emotionKeys = ["happy", "sad", "angry", "surprised"];
+      let topKey = "happy";
+      let topProb = -1;
+
+      emotionKeys.forEach((key) => {
+        const prob = scores[key] || 0;
+        if (prob > topProb) {
+          topProb = prob;
+          topKey = key;
+        }
+
+        const pctText = (prob * 100).toFixed(1) + "%";
+        document.getElementById(`pct-${key}`).textContent = pctText;
+        document.getElementById(`bar-${key}`).style.width = `${Math.min(100, Math.max(0, prob * 100))}%`;
+
+        // Reset row highlight
+        const rowEl = document.getElementById(`row-${key}`);
+        rowEl.className = "p-3 rounded-2xl glass-subcard transition-all duration-300";
+      });
+
+      // Highlight top emotion row
+      const activeConfig = EMOTION_CONFIG[topKey];
+      const topRow = document.getElementById(`row-${topKey}`);
+      topRow.className = `p-3 rounded-2xl border transition-all duration-300 ${activeConfig.rowHighlight}`;
+
+      // Update Primary Detected Emotion Card
+      const confidencePercent = (topProb * 100).toFixed(1) + "%";
+      document.getElementById("primary-emoji").textContent = activeConfig.emoji;
+      document.getElementById("primary-emotion-title").textContent = activeConfig.label;
+      document.getElementById("primary-emotion-subtitle").textContent = activeConfig.subtitle;
+      document.getElementById("empathy-tip-text").textContent = activeConfig.tip;
+
+      const badge = document.getElementById("primary-confidence-badge");
+      badge.textContent = `${confidencePercent} Confidence`;
+      badge.className = `px-3 py-1 rounded-full text-xs font-bold border transition-colors ${activeConfig.badgeClass}`;
+
+      const iconBox = document.getElementById("primary-icon-box");
+      iconBox.className = `w-20 h-20 sm:w-24 sm:h-24 rounded-2xl border flex items-center justify-center shrink-0 shadow-lg transition-all duration-300 ${activeConfig.iconBoxClass}`;
+
+      const glow = document.getElementById("primary-glow");
+      glow.className = `pointer-events-none absolute -top-20 -right-20 w-48 h-48 rounded-full blur-3xl transition-colors duration-500 ${activeConfig.glowColor}`;
+
+      // Update Live Webcam HUD Pill
+      document.getElementById("hud-emotion-emoji").textContent = activeConfig.emoji;
+      document.getElementById("hud-emotion-label").textContent = `${activeConfig.label} (${confidencePercent})`;
+    }
+
+    /**
+     * Reset prediction display back to standby state.
+     */
+    function resetPredictionDisplay() {
+      ["happy", "sad", "angry", "surprised"].forEach((key) => {
+        document.getElementById(`pct-${key}`).textContent = "0.0%";
+        document.getElementById(`bar-${key}`).style.width = "0%";
+        document.getElementById(`row-${key}`).className = "p-3 rounded-2xl glass-subcard transition-all duration-300";
+      });
+
+      document.getElementById("primary-emoji").textContent = "🧠";
+      document.getElementById("primary-emotion-title").textContent = "Ready to Scan";
+      document.getElementById("primary-emotion-subtitle").textContent =
+        "Start the live webcam or upload a photo to view real-time AI emotion recognition results.";
+      document.getElementById("empathy-tip-text").textContent =
+        "Recognizing subtle facial cues helps build empathy, active listening, and supportive conversations.";
+
+      const badge = document.getElementById("primary-confidence-badge");
+      badge.textContent = "Waiting for scan";
+      badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-slate-800 text-slate-300 border border-slate-700";
+
+      document.getElementById("primary-icon-box").className =
+        "w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-slate-900/90 border border-slate-700/80 flex items-center justify-center shrink-0 shadow-inner transition-all duration-300";
+    }
+
+    /**
+     * Helper to update the header model status badge.
+     */
+    function updateStatusBadge(text, isScanning) {
+      const statusPill = document.getElementById("model-status-pill");
+      const statusDot = document.getElementById("model-status-dot");
+      const statusText = document.getElementById("model-status-text");
+
+      statusText.textContent = text;
+      if (isScanning) {
+        statusPill.className =
+          "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium bg-sky-500/15 border border-sky-500/35 text-sky-300 transition-all";
+        statusDot.className = "w-2 h-2 rounded-full bg-sky-400 animate-ping";
+      } else {
+        statusPill.className =
+          "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 transition-all";
+        statusDot.className = "w-2 h-2 rounded-full bg-emerald-400";
+      }
+    }
+
+    /**
+     * Show/Hide custom error/notification banner (never uses alert()).
+     */
+    function showAlert(title, message) {
+      document.getElementById("alert-title").textContent = title;
+      document.getElementById("alert-message").textContent = message;
+      document.getElementById("alert-banner").classList.remove("hidden");
+    }
+
+    function hideAlert() {
+      document.getElementById("alert-banner").classList.add("hidden");
+    }
+
+    /**
+     * Setup Drag-and-Drop listeners for the Image Upload Drop Zone.
+     */
+    function setupDragAndDrop() {
+      const dropZone = document.getElementById("drop-zone");
+      if (!dropZone) return;
+
+      ["dragenter", "dragover"].forEach((evtName) => {
+        dropZone.addEventListener(evtName, (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          dropZone.classList.add("border-sky-400", "bg-sky-500/5");
+        });
+      });
+
+      ["dragleave", "drop"].forEach((evtName) => {
+        dropZone.addEventListener(evtName, (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          dropZone.classList.remove("border-sky-400", "bg-sky-500/5");
+        });
+      });
+
+      dropZone.addEventListener("drop", (e) => {
+        const files = e.dataTransfer && e.dataTransfer.files;
+        if (files && files.length > 0) {
+          loadImageFile(files[0]);
+        }
+      });
+    }
+
+    // Boot application on window load
+    window.addEventListener("DOMContentLoaded", () => {
+      setupDragAndDrop();
+      initModel();
+    });
+
+    // Clean up webcam stream if user navigates away
+    window.addEventListener("beforeunload", () => {
+      if (isWebcamRunning) {
+        stopWebcam();
+      }
+    });
+  </script>
+</body>
+</html>
